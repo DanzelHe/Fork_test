@@ -171,6 +171,7 @@
     <button class="btn active" data-tool="brush" title="画笔"><span class="icon">✏️</span></button>
     <button class="btn" data-tool="line" title="直线"><span class="icon">／</span></button>
     <button class="btn" data-tool="rect" title="矩形"><span class="icon">▭</span></button>
+    <button class="btn" data-tool="square" title="正方形"><span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16"></rect></svg></span></button>
     <button class="btn" data-tool="circle" title="圆形"><span class="icon">◯</span></button>
     <button class="btn" data-tool="triangle" title="三角形"><span class="icon">△</span></button>
     <button class="btn" data-tool="ellipse" title="椭圆"><span class="icon">⬭</span></button>
@@ -245,7 +246,7 @@
   };
 
   const TOOL_NAMES = {
-    brush: '画笔', line: '直线', rect: '矩形', circle: '圆形',
+    brush: '画笔', line: '直线', rect: '矩形', square: '正方形', circle: '圆形',
     triangle: '三角形', ellipse: '椭圆', arrow: '箭头', eraser: '橡皮', fill: '填充'
   };
 
@@ -356,6 +357,14 @@
         break;
       case 'rect': {
         const w = x1 - x0, h = y1 - y0;
+        if (state.fillMode) c.fillRect(x0, y0, w, h);
+        else c.strokeRect(x0, y0, w, h);
+        break;
+      }
+      case 'square': {
+        const side = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+        const w = (x1 >= x0 ? 1 : -1) * side;
+        const h = (y1 >= y0 ? 1 : -1) * side;
         if (state.fillMode) c.fillRect(x0, y0, w, h);
         else c.strokeRect(x0, y0, w, h);
         break;
