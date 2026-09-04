@@ -158,6 +158,46 @@
   .statusbar span b { color: #cdd6f4; }
 
   .icon { font-size: 16px; line-height: 1; }
+
+  /* ===== 文字输入浮层 ===== */
+  .text-overlay {
+    position: absolute;
+    z-index: 8;
+    display: none;
+    min-width: 120px;
+    background: rgba(255,255,255,0.92);
+    border: 1px dashed #89b4fa;
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: #111111;
+    outline: none;
+    font-size: 16px;
+    line-height: 1.2;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
+  .select {
+    background: #313244;
+    border: 1px solid #45475a;
+    color: #cdd6f4;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+  }
+  .select:hover { border-color: #585b70; }
+  input[type="number"] {
+    background: #11111b;
+    border: 1px solid #45475a;
+    color: #cdd6f4;
+    border-radius: 6px;
+    padding: 5px 6px;
+    font-size: 13px;
+    outline: none;
+  }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn:disabled:hover { background: #313244; border-color: #45475a; }
+  .btn.active.text-bold { font-weight: 800; text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -181,6 +221,8 @@
     <button class="btn" id="cubeBtn" title="立方体（点击即画）"><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 L21 8 L21 17 L12 22 L3 17 L3 8 Z"></path><path d="M12 3 L12 22"></path><path d="M3 8 L12 13 L21 8"></path><path d="M12 13 L12 22" opacity="0.5"></path></svg></span></button>
     <button class="btn" id="sunBtn" title="太阳（点击即画）"><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line><line x1="4.9" y1="4.9" x2="6.9" y2="6.9"></line><line x1="17.1" y1="17.1" x2="19.1" y2="19.1"></line><line x1="4.9" y1="19.1" x2="6.9" y2="17.1"></line><line x1="17.1" y1="6.9" x2="19.1" y2="4.9"></line></svg></span></button>
     <button class="btn" id="benzBtn" title="奔驰三叉星（点击即画）"><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"></circle><circle cx="12" cy="12" r="8.5"></circle><path d="M12 3 L12 12 L19.5 16.5"></path><path d="M19.5 16.5 L12 12 L4.5 16.5"></path><path d="M4.5 16.5 L12 12 L12 3"></path></svg></span></button>
+    <button class="btn" data-tool="text" title="文字"><span class="icon">🅰</span></button>
+    <button class="btn" data-tool="select" title="选择/变换"><span class="icon">⬚</span></button>
   </div>
 
   <!-- 填充模式 -->
@@ -206,6 +248,38 @@
     <span class="size-display" id="sizeDisplay">4</span>
   </div>
 
+  <!-- 文字工具 -->
+  <div class="tool-group" id="textGroup">
+    <label>文字:</label>
+    <select id="fontSelect" class="select" title="字体">
+      <option value='"Microsoft YaHei", sans-serif'>微软雅黑</option>
+      <option value='SimSun, serif'>宋体</option>
+      <option value='KaiTi, serif'>楷体</option>
+      <option value='SimHei, sans-serif'>黑体</option>
+      <option value='FangSong, serif'>仿宋</option>
+      <option value='Arial, sans-serif'>Arial</option>
+      <option value='"Times New Roman", serif'>Times</option>
+      <option value='"Comic Sans MS", cursive'>Comic Sans</option>
+      <option value='Impact, sans-serif'>Impact</option>
+      <option value='monospace'>等宽</option>
+    </select>
+    <label>字级:</label>
+    <input type="number" id="fontSize" min="8" max="200" value="28" style="width:54px">
+    <button class="btn" id="boldToggle" title="粗体">B</button>
+  </div>
+
+  <!-- 选择/变换工具 -->
+  <div class="tool-group" id="transformGroup">
+    <label>变换:</label>
+    <button class="btn" id="rotLeftBtn" title="逆时针旋转90°" disabled>↺</button>
+    <button class="btn" id="rotRightBtn" title="顺时针旋转90°" disabled>↻</button>
+    <button class="btn" id="scaleUpBtn" title="放大" disabled>＋</button>
+    <button class="btn" id="scaleDownBtn" title="缩小" disabled>－</button>
+    <button class="btn danger" id="selDeleteBtn" title="删除选中" disabled>🗑</button>
+    <button class="btn primary" id="selConfirmBtn" title="确定（贴回画布）" disabled>✓</button>
+    <button class="btn" id="selCancelBtn" title="取消（还原）" disabled>✕</button>
+  </div>
+
   <!-- 操作 -->
   <div class="tool-group">
     <button class="btn" id="undoBtn" title="撤销 (Ctrl+Z)">↶ 撤销</button>
@@ -219,6 +293,7 @@
 <div class="canvas-wrap" id="canvasWrap">
   <canvas id="board"></canvas>
   <canvas id="preview"></canvas>
+  <input type="text" id="textOverlay" class="text-overlay" placeholder="输入文字 (Enter确定 / Esc取消)">
 </div>
 
 <!-- ===== 状态栏 ===== -->
@@ -246,11 +321,27 @@
     lastX: 0, lastY: 0,
     history: [],
     historyIndex: -1,
+    // 文字
+    font: '"Microsoft YaHei", sans-serif',
+    fontSize: 28,
+    bold: false,
+    // 选择/变换
+    sel: {
+      active: false,        // 是否有浮动的选中图层
+      selecting: false,     // 正在拖框选择
+      moving: false,
+      x: 0, y: 0, w: 0, h: 0,   // 浮动图层在预览画布上的位置与尺寸
+      img: null,            // offscreen canvas，存放选中像素
+      original: null,       // ImageData，取消时还原用
+      dragOffX: 0, dragOffY: 0,
+      curX0: 0, curY0: 0, curX1: 0, curY1: 0,  // 拖框当前矩形
+    },
   };
 
   const TOOL_NAMES = {
     brush: '画笔', line: '直线', rect: '矩形', square: '正方形', circle: '圆形',
-    triangle: '三角形', ellipse: '椭圆', arrow: '箭头', eraser: '橡皮', fill: '填充'
+    triangle: '三角形', ellipse: '椭圆', arrow: '箭头', eraser: '橡皮', fill: '填充',
+    text: '文字', select: '选择'
   };
 
   const PALETTE = [
@@ -286,10 +377,17 @@
   // ===== 工具切换 =====
   document.querySelectorAll('#toolGroup .btn').forEach(b => {
     b.addEventListener('click', () => {
+      // 图章按钮（立方体/太阳/奔驰）没有 data-tool，不参与工具切换
+      if (!b.dataset.tool) return;
+      // 离开当前工具前的清理
+      if (textOverlay.style.display === 'block') commitText();
+      if (state.tool === 'select' && b.dataset.tool !== 'select') cancelSelection();
+
       document.querySelectorAll('#toolGroup .btn').forEach(x => x.classList.remove('active'));
       b.classList.add('active');
       state.tool = b.dataset.tool;
-      board.style.cursor = state.tool === 'fill' ? 'cell' : 'crosshair';
+      const cursors = { fill: 'cell', text: 'text', select: 'default' };
+      board.style.cursor = cursors[state.tool] || 'crosshair';
       updateStatus();
     });
   });
@@ -314,6 +412,154 @@
     sizeDisplay.textContent = state.size;
     updateStatus();
   });
+
+  // ===== 文字：字体 / 字级 / 粗体 =====
+  const fontSelect = document.getElementById('fontSelect');
+  const fontSizeInput = document.getElementById('fontSize');
+  const boldToggle = document.getElementById('boldToggle');
+  fontSelect.addEventListener('change', e => { state.font = e.target.value; });
+  fontSizeInput.addEventListener('input', e => {
+    const v = parseInt(e.target.value, 10);
+    if (!isNaN(v) && v > 0) state.fontSize = v;
+  });
+  boldToggle.addEventListener('click', () => {
+    state.bold = !state.bold;
+    boldToggle.classList.toggle('active', state.bold);
+    boldToggle.classList.toggle('text-bold', state.bold);
+  });
+
+  // ===== 选择/变换按钮引用 =====
+  const SEL_BTNS = ['rotLeftBtn','rotRightBtn','scaleUpBtn','scaleDownBtn','selDeleteBtn','selConfirmBtn','selCancelBtn']
+    .map(id => document.getElementById(id));
+  function setSelBtnsEnabled(on) {
+    SEL_BTNS.forEach(b => b.disabled = !on);
+  }
+
+  // 在 preview 上绘制当前浮动选中图层 / 拖框
+  function drawSelection() {
+    pctx.clearRect(0, 0, preview.width, preview.height);
+    const s = state.sel;
+    if (s.selecting) {
+      // 拖框（虚线矩形）
+      const x = Math.min(s.curX0, s.curX1), y = Math.min(s.curY0, s.curY1);
+      const w = Math.abs(s.curX1 - s.curX0), h = Math.abs(s.curY1 - s.curY0);
+      pctx.save();
+      pctx.setLineDash([6, 4]);
+      pctx.strokeStyle = '#89b4fa';
+      pctx.lineWidth = 1.5;
+      pctx.strokeRect(x, y, w, h);
+      pctx.fillStyle = 'rgba(137,180,250,0.12)';
+      pctx.fillRect(x, y, w, h);
+      pctx.restore();
+      return;
+    }
+    if (s.active && s.img) {
+      pctx.drawImage(s.img, s.x, s.y, s.w, s.h);
+      pctx.save();
+      pctx.setLineDash([6, 4]);
+      pctx.strokeStyle = '#89b4fa';
+      pctx.lineWidth = 1.5;
+      pctx.strokeRect(s.x, s.y, s.w, s.h);
+      pctx.restore();
+    }
+  }
+
+  // 把选中图层贴回 board
+  function commitSelection() {
+    const s = state.sel;
+    if (!s.active || !s.img) return;
+    ctx.drawImage(s.img, s.x, s.y, s.w, s.h);
+    clearSelection();
+    pctx.clearRect(0, 0, preview.width, preview.height);
+    saveHistory();
+  }
+  // 取消：把原像素还原回 board
+  function cancelSelection() {
+    const s = state.sel;
+    if (!s.active) { clearSelection(); return; }
+    if (s.original) ctx.putImageData(s.original, Math.round(s.origX), Math.round(s.origY));
+    clearSelection();
+    pctx.clearRect(0, 0, preview.width, preview.height);
+    saveHistory();
+  }
+  function clearSelection() {
+    const s = state.sel;
+    s.active = false; s.selecting = false; s.moving = false;
+    s.img = null; s.original = null;
+    setSelBtnsEnabled(false);
+  }
+
+  // 框选完成后，把区域内像素“抬起”为浮动图层
+  function liftRegion(x0, y0, x1, y1) {
+    const s = state.sel;
+    const x = Math.max(0, Math.round(Math.min(x0, x1)));
+    const y = Math.max(0, Math.round(Math.min(y0, y1)));
+    const w = Math.min(board.width - x, Math.round(Math.abs(x1 - x0)));
+    const h = Math.min(board.height - y, Math.round(Math.abs(y1 - y0)));
+    if (w < 2 || h < 2) return;
+    // 保存原图像素用于取消还原
+    s.original = ctx.getImageData(x, y, w, h);
+    s.origX = x; s.origY = y;
+    // 抬起像素到 offscreen canvas
+    const off = document.createElement('canvas');
+    off.width = w; off.height = h;
+    off.getContext('2d').drawImage(board, x, y, w, h, 0, 0, w, h);
+    // 在 board 上清除该区域（用白色覆盖）
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x, y, w, h);
+    s.img = off;
+    s.x = x; s.y = y; s.w = w; s.h = h;
+    s.active = true;
+    setSelBtnsEnabled(true);
+    drawSelection();
+  }
+
+  // 旋转 90°（dir: 1=顺时针, -1=逆时针）
+  function rotateSelection(dir) {
+    const s = state.sel;
+    if (!s.active || !s.img) return;
+    const ow = s.img.width, oh = s.img.height;
+    const off = document.createElement('canvas');
+    off.width = oh; off.height = ow;   // 宽高互换
+    const octx = off.getContext('2d');
+    octx.translate(off.width / 2, off.height / 2);
+    octx.rotate(dir * Math.PI / 2);
+    octx.drawImage(s.img, -ow / 2, -oh / 2);
+    // 保持中心位置不变
+    const cx = s.x + s.w / 2, cy = s.y + s.h / 2;
+    s.img = off;
+    s.w = off.width; s.h = off.height;
+    s.x = cx - s.w / 2; s.y = cy - s.h / 2;
+    drawSelection();
+  }
+
+  // 缩放（factor: >1 放大, <1 缩小）
+  function scaleSelection(factor) {
+    const s = state.sel;
+    if (!s.active || !s.img) return;
+    const nw = Math.max(4, Math.round(s.w * factor));
+    const nh = Math.max(4, Math.round(s.h * factor));
+    const off = document.createElement('canvas');
+    off.width = nw; off.height = nh;
+    off.getContext('2d').drawImage(s.img, 0, 0, nw, nh);
+    const cx = s.x + s.w / 2, cy = s.y + s.h / 2;
+    s.img = off;
+    s.w = nw; s.h = nh;
+    s.x = cx - s.w / 2; s.y = cy - s.h / 2;
+    drawSelection();
+  }
+
+  document.getElementById('rotLeftBtn').addEventListener('click', () => rotateSelection(-1));
+  document.getElementById('rotRightBtn').addEventListener('click', () => rotateSelection(1));
+  document.getElementById('scaleUpBtn').addEventListener('click', () => scaleSelection(1.2));
+  document.getElementById('scaleDownBtn').addEventListener('click', () => scaleSelection(1 / 1.2));
+  document.getElementById('selDeleteBtn').addEventListener('click', () => {
+    clearSelection();
+    pctx.clearRect(0, 0, preview.width, preview.height);
+    saveHistory();
+  });
+  document.getElementById('selConfirmBtn').addEventListener('click', commitSelection);
+  document.getElementById('selCancelBtn').addEventListener('click', cancelSelection);
 
   // ===== 画布尺寸 =====
   function resize() {
@@ -566,6 +812,79 @@
     return { r: parseInt(hex.substr(0,2),16), g: parseInt(hex.substr(2,2),16), b: parseInt(hex.substr(4,2),16) };
   }
 
+  // ===== 文字输入浮层 =====
+  const textOverlay = document.getElementById('textOverlay');
+  let textPos = { x: 0, y: 0 };
+  function openTextInput(p) {
+    // 若已有打开的输入框，先提交再开新的
+    if (textOverlay.style.display === 'block') commitText();
+    textPos = p;
+    textOverlay.style.left = p.x + 'px';
+    textOverlay.style.top = (p.y - state.fontSize / 2) + 'px';
+    textOverlay.style.fontFamily = state.font;
+    textOverlay.style.fontSize = state.fontSize + 'px';
+    textOverlay.style.fontWeight = state.bold ? '700' : '400';
+    textOverlay.style.color = state.color;
+    textOverlay.style.display = 'block';
+    textOverlay.value = '';
+    setTimeout(() => textOverlay.focus(), 0);
+  }
+  function commitText() {
+    if (textOverlay.style.display !== 'block') return;
+    const txt = textOverlay.value;
+    textOverlay.style.display = 'none';
+    if (!txt) return;
+    ctx.fillStyle = state.color;
+    ctx.textBaseline = 'middle';
+    ctx.font = (state.bold ? 'bold ' : '') + state.fontSize + 'px ' + state.font;
+    ctx.fillText(txt, textPos.x, textPos.y);
+    saveHistory();
+  }
+  textOverlay.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); commitText(); }
+    else if (e.key === 'Escape') { e.preventDefault(); textOverlay.style.display = 'none'; }
+  });
+  textOverlay.addEventListener('blur', () => { setTimeout(commitText, 50); });
+
+  // ===== 选择/变换 事件处理 =====
+  function selectStart(p) {
+    const s = state.sel;
+    if (s.active && p.x >= s.x && p.x <= s.x + s.w && p.y >= s.y && p.y <= s.y + s.h) {
+      // 点中浮动图层 → 开始拖动移动
+      s.moving = true;
+      s.dragOffX = p.x - s.x; s.dragOffY = p.y - s.y;
+      state.drawing = true;
+      return;
+    }
+    if (s.active) commitSelection();   // 在外部点新区域 → 先贴回再选新的
+    s.selecting = true;
+    s.curX0 = s.curX1 = p.x;
+    s.curY0 = s.curY1 = p.y;
+    state.drawing = true;
+  }
+  function selectMove(p) {
+    const s = state.sel;
+    if (s.moving) {
+      s.x = p.x - s.dragOffX; s.y = p.y - s.dragOffY;
+      drawSelection();
+      return;
+    }
+    if (s.selecting) {
+      s.curX1 = p.x; s.curY1 = p.y;
+      drawSelection();
+    }
+  }
+  function selectEnd() {
+    const s = state.sel;
+    if (!state.drawing) return;
+    state.drawing = false;
+    if (s.moving) { s.moving = false; drawSelection(); return; }
+    if (s.selecting) {
+      s.selecting = false;
+      liftRegion(s.curX0, s.curY0, s.curX1, s.curY1);
+    }
+  }
+
   // ===== 事件 =====
   function start(e) {
     e.preventDefault();
@@ -573,6 +892,8 @@
     state.startX = state.lastX = p.x;
     state.startY = state.lastY = p.y;
 
+    if (state.tool === 'text') { openTextInput(p); return; }
+    if (state.tool === 'select') { selectStart(p); return; }
     if (state.tool === 'fill') {
       floodFill(Math.floor(p.x), Math.floor(p.y), state.color);
       saveHistory();
@@ -598,6 +919,7 @@
     e.preventDefault();
     const p = getPos(e);
     document.getElementById('coords').textContent = Math.round(p.x) + ', ' + Math.round(p.y);
+    if (state.tool === 'select') { if (state.drawing) selectMove(p); return; }
     if (!state.drawing) return;
 
     if (state.tool === 'brush' || state.tool === 'eraser') {
@@ -616,6 +938,7 @@
   }
 
   function end(e) {
+    if (state.tool === 'select') { selectEnd(); return; }
     if (!state.drawing) return;
     e.preventDefault();
     state.drawing = false;
