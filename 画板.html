@@ -397,7 +397,7 @@
   <div class="gate-card">
     <h2>🎨 畫板 - 權限申請</h2>
     <div class="hint" id="adminHint" hidden>首次使用提示：預設管理員 <b>Jason / jason123</b>，請登入後審核申請。</div>
-    <div class="hint warn" id="staleHint" hidden>本機快取的使用者資料與 users.json 不一致，請<a href="#" id="clearCacheLink">清除快取</a>後再登入。</div>
+    <div class="hint warn" id="staleHint" hidden>本機快取的使用者資料與 user.json 不一致，請<a href="#" id="clearCacheLink">清除快取</a>後再登入。</div>
     <details class="debug-panel">
       <summary>🔧 診斷資訊（無法登入時請展開）</summary>
       <div id="debugInfo" class="debug-info"></div>
@@ -449,7 +449,7 @@
         <h3>申請審核中</h3>
         <p>您的申請已送出，請等待管理員批准。</p>
         <p style="font-size:12px;color:#a6adc8;margin-top:8px;line-height:1.6">
-          如果管理員在不同的裝置或瀏覽器上，請點擊下方按鈕<b>匯出申請文件</b>，將下載的 <code>users.json</code> 傳給管理員，由管理員匯入並批准後，再重新開啟本頁即可登入。
+          如果管理員在不同的裝置或瀏覽器上，請點擊下方按鈕<b>匯出申請文件</b>，將下載的 <code>user.json</code> 傳給管理員，由管理員匯入並批准後，再重新開啟本頁即可登入。
         </p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px">
           <button class="btn primary" id="exportForAdminBtn" type="button">📤 匯出申請文件（給管理員）</button>
@@ -603,9 +603,9 @@
       <div class="header-tools">
         <span id="srcLabel" class="src-label">資料來源：—</span>
         <span id="dirtyBadge" class="dirty-badge" hidden>⚠ 有未儲存變更</span>
-        <button class="btn" id="importJsonBtn" type="button" title="從本機文件載入 users.json，可合併待審使用者申請">📥 匯入</button>
-        <button class="btn" id="reloadBtn" type="button" title="從 users.json 重新載入（會覆蓋本機快取）">↻ 重新載入</button>
-        <button class="btn primary" id="saveJsonBtn" type="button" title="下載 users.json（儲存目前的變更）">💾 儲存 users.json</button>
+        <button class="btn" id="importJsonBtn" type="button" title="從本機文件載入 user.json，可合併待審使用者申請">📥 匯入</button>
+        <button class="btn" id="reloadBtn" type="button" title="從 user.json 重新載入（會覆蓋本機快取）">↻ 重新載入</button>
+        <button class="btn primary" id="saveJsonBtn" type="button" title="寫入 user.json（儲存目前的變更）">💾 儲存 user.json</button>
         <button class="btn" id="adminCloseBtn" type="button">✕</button>
       </div>
     </div>
@@ -662,9 +662,10 @@ function escapeHtml(s) {
   }[c]));
 }
 
-// 載入使用者：優先用 localStorage 快取 → 否則嘗試讀 users.json → 都沒有才建立預設管理員
-let isDirty = false;   // 是否有未寫回 users.json 的變更
+// 載入使用者：優先用 localStorage 快取 → 否則嘗試讀 user.json → 都沒有才建立預設管理員
+let isDirty = false;   // 是否有未寫回 user.json 的變更
 let usersSource = '';  // 'cache' | 'file' | 'default'
+let usersFileHandle = null;  // File System Access API 句柄（取得後直接讀寫，無需下載）
 const USER_FILE_FETCH_TIMEOUT_MS = 2000;
 const USERS_BOOT_TIMEOUT_MS = 2000;
 
@@ -686,17 +687,17 @@ async function loadUsers({ forceFile = false } = {}) {
     updateDirtyBadge();
   }
 
-  // 1. 有尚未存回 users.json 的變更 → 保留本機快取，避免被檔案覆蓋
+  // 1. 有尚未存回 user.json 的變更 → 保留本機快取，避免被檔案覆蓋
   if (!forceFile && Object.keys(cache).length > 0 && isDirty) {
     usersSource = 'cache';
     return cache;
   }
 
-  // 2. 預設行為：users.json 為主，重新讀取
+  // 2. 預設行為：user.json 為主，重新讀取
   try {
     const ac = new AbortController();
     const timeout = setTimeout(() => ac.abort(), USER_FILE_FETCH_TIMEOUT_MS);
-    const res = await fetch('./users.json?_=' + Date.now(), { signal: ac.signal });
+    const res = await fetch('./user.json?_=' + Date.now(), { signal: ac.signal });
     clearTimeout(timeout);
     if (res.ok) {
       const data = await res.json();
@@ -766,7 +767,7 @@ function updateDirtyBadge() {
   el.hidden = !isDirty;
   const srcEl = document.getElementById('srcLabel');
   if (srcEl) {
-    const labels = { cache: '本機快取', file: 'users.json', default: '尚未建立檔案' };
+    const labels = { cache: '本機快取', file: 'user.json', default: '尚未建立檔案' };
     srcEl.textContent = '資料來源：' + (labels[usersSource] || usersSource);
   }
 }
@@ -779,7 +780,7 @@ function exportUsersJson() {
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const link = document.createElement('a');
-  link.download = 'users.json';
+  link.download = 'user.json';
   link.href = URL.createObjectURL(blob);
   link.click();
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
@@ -788,8 +789,91 @@ function exportUsersJson() {
   updateDirtyBadge();
 }
 
-// 從本機文件匯入 users.json（供管理員合併待審申請）
+// 直接寫入 user.json（透過 File System Access API）
+// 首次呼叫會彈出「另存新檔」對話框取得句柄；之後每次都直接寫入，無需對話框。
+async function saveUsersToDisk() {
+  const users = DB.getUsers();
+  const data = { users: Object.values(users), updatedAt: Date.now() };
+  const json = JSON.stringify(data, null, 2);
+
+  // 若瀏覽器不支援 File System Access API，回退到下載
+  if (!window.showSaveFilePicker) { exportUsersJson(); return; }
+
+  if (!usersFileHandle) {
+    try {
+      usersFileHandle = await window.showSaveFilePicker({
+        suggestedName: 'user.json',
+        types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+      });
+    } catch (e) {
+      if (e.name !== 'AbortError') alert('⚠️ 無法開啟儲存對話框：' + e.message);
+      return;
+    }
+  }
+
+  try {
+    const writable = await usersFileHandle.createWritable();
+    await writable.write(json);
+    await writable.close();
+    clearDirty();
+    usersSource = 'file';
+    updateDirtyBadge();
+  } catch (e) {
+    if (e.name === 'NotAllowedError') {
+      // 權限被撤銷，重新申請後再試
+      try {
+        const perm = await usersFileHandle.requestPermission({ mode: 'readwrite' });
+        if (perm === 'granted') await saveUsersToDisk();
+        else { usersFileHandle = null; alert('⚠️ 寫入權限被拒絕，請重新選擇檔案'); }
+      } catch { usersFileHandle = null; }
+    } else {
+      alert('❌ 寫入 user.json 失敗：' + e.message);
+    }
+  }
+}
+
+// 從本機文件匯入 user.json（供管理員合併待審申請）
 function importUsersJson() {
+  if (window.showOpenFilePicker) {
+    // File System Access API：取得讀寫句柄，後續可直接寫回原檔
+    (async () => {
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+        });
+        // 申請寫入權限（取得後即可直接回寫，無需每次另存）
+        const perm = await handle.requestPermission({ mode: 'readwrite' });
+        if (perm === 'granted') usersFileHandle = handle;
+
+        const file = await handle.getFile();
+        const text = await file.text();
+        const data = JSON.parse(text);
+        if (!data || !Array.isArray(data.users)) throw new Error('格式不正確，找不到 users 陣列');
+        const existing = DB.getUsers();
+        let addedCount = 0;
+        data.users.forEach(u => {
+          if (u && u.username && u.passwordHash && u.role && !existing[u.username]) {
+            existing[u.username] = u;
+            addedCount++;
+          }
+        });
+        if (addedCount > 0) {
+          DB.saveUsers(existing);
+          markDirty();
+          renderAdminList();
+          renderGate();
+          alert(`✅ 已匯入 ${addedCount} 位新使用者，請在「待審」頁籤批准後系統將自動寫入 user.json`);
+        } else {
+          alert('文件中的帳號均已存在，沒有新增使用者');
+        }
+      } catch (e) {
+        if (e.name !== 'AbortError') alert('❌ 匯入失敗：' + e.message);
+      }
+    })();
+    return;
+  }
+
+  // 回退：舊版瀏覽器不支援 File System Access API
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = '.json,application/json';
@@ -813,7 +897,7 @@ function importUsersJson() {
         markDirty();
         renderAdminList();
         renderGate();
-        alert(`✅ 已匯入 ${addedCount} 位新使用者，請在「待審」頁籤審核後，儲存 users.json`);
+        alert(`✅ 已匯入 ${addedCount} 位新使用者，請在「待審」頁籤審核後，儲存 user.json`);
       } else {
         alert('文件中的帳號均已存在，沒有新增使用者');
       }
@@ -845,7 +929,7 @@ async function waitUsersReady() {
 }
 
 async function reloadFromFile() {
-  if (isDirty && !confirm('有尚未儲存的變更，重新載入將會遺失。確定要從 users.json 重新載入嗎？')) return;
+  if (isDirty && !confirm('有尚未儲存的變更，重新載入將會遺失。確定要從 user.json 重新載入嗎？')) return;
   DB.clearUsers();
   clearDirty();
   await loadUsers();
@@ -1008,7 +1092,7 @@ document.getElementById('loginForm').addEventListener('submit', async e => {
 // 清除本機快取並重新整理
 document.getElementById('clearCacheLink').addEventListener('click', e => {
   e.preventDefault();
-  if (!confirm('確定要清除本機使用者快取？將會重新從 users.json 讀取（若讀取不到則建立預設管理員 Jason / jason123）。')) return;
+  if (!confirm('確定要清除本機使用者快取？將會重新從 user.json 讀取（若讀取不到則建立預設管理員 Jason / jason123）。')) return;
   DB.clearUsers();
   localStorage.removeItem('cb_session');
   localStorage.removeItem('cb_dirty');
@@ -1019,7 +1103,7 @@ document.getElementById('clearCacheLink').addEventListener('click', e => {
 function updateDebugInfo() {
   const users = DB.getUsers();
   const names = Object.keys(users);
-  const srcLabels = { cache: '本機快取', file: 'users.json', default: '預設（尚未存檔）' };
+  const srcLabels = { cache: '本機快取', file: 'user.json', default: '預設（尚未存檔）' };
   let html = '';
   html += `<div>資料來源：<code>${srcLabels[usersSource] || usersSource}</code></div>`;
   html += `<div>載入帳號數：<code>${names.length}</code> ${names.length ? '(' + names.map(n => `<code>${escapeHtml(n)}</code>`).join(', ') + ')' : ''}</div>`;
@@ -1109,7 +1193,7 @@ document.getElementById('reapplyForm').addEventListener('submit', e => {
 document.getElementById('logoutBtn').addEventListener('click', doLogout);
 document.getElementById('adminBtn').addEventListener('click', openAdminPanel);
 document.getElementById('adminCloseBtn').addEventListener('click', closeAdminPanel);
-document.getElementById('saveJsonBtn').addEventListener('click', exportUsersJson);
+document.getElementById('saveJsonBtn').addEventListener('click', saveUsersToDisk);
 document.getElementById('reloadBtn').addEventListener('click', reloadFromFile);
 document.getElementById('importJsonBtn').addEventListener('click', importUsersJson);
 document.getElementById('exportForAdminBtn').addEventListener('click', exportUsersJson);
@@ -1124,10 +1208,11 @@ document.querySelectorAll('#adminTabs .gate-tab').forEach(tab => {
   });
 });
 
-function openAdminPanel() {
+async function openAdminPanel() {
   document.getElementById('adminPanel').hidden = false;
   currentAdminTab = 'pending';
   document.querySelectorAll('#adminTabs .gate-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'pending'));
+  if (!isDirty) await refreshUsersFromFile();
   updateDirtyBadge();
   renderAdminList();
 }
@@ -1141,6 +1226,10 @@ function renderAdminList() {
   document.getElementById('cntPending').textContent  = cnt.pending;
   document.getElementById('cntApproved').textContent = cnt.approved;
   document.getElementById('cntRejected').textContent = cnt.rejected;
+  if (currentAdminTab === 'pending' && cnt.pending === 0 && cnt.approved > 0) {
+    currentAdminTab = 'approved';
+    document.querySelectorAll('#adminTabs .gate-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'approved'));
+  }
 
   const container = document.getElementById('adminList');
   const items = list.filter(u => u.role === currentAdminTab);
@@ -1154,6 +1243,7 @@ function renderAdminList() {
       actions.push(`<button class="btn primary" data-act="approve" data-user="${escapeHtml(u.username)}" type="button">批准</button>`);
       actions.push(`<button class="btn danger" data-act="reject" data-user="${escapeHtml(u.username)}" type="button">拒絕</button>`);
     } else if (u.role === 'approved') {
+      actions.push(`<button class="btn danger" data-act="delete" data-user="${escapeHtml(u.username)}" type="button">刪除用戶</button>`);
       actions.push(`<button class="btn danger" data-act="revoke" data-user="${escapeHtml(u.username)}" type="button">撤銷權限</button>`);
     } else if (u.role === 'rejected') {
       actions.push(`<button class="btn" data-act="reset" data-user="${escapeHtml(u.username)}" type="button">重置為待審</button>`);
@@ -1204,9 +1294,16 @@ function adminAction(act, username) {
     u.reviewedAt = Date.now();
     u.reviewedBy = reviewer;
     delete u.reviewNote;
+  } else if (act === 'delete') {
+    if (!confirm(`確定要刪除使用者 ${username}？`)) return;
+    delete users[username];
   }
   DB.saveUsers(users);
-  markDirty();
+  if (act === 'approve' || act === 'delete') {
+    saveUsersToDisk();  // 批准/刪除後直接寫入 user.json
+  } else {
+    markDirty();
+  }
   renderAdminList();
   // 更新工具列上管理員按鈕的待審件數
   const pendingCnt = Object.values(DB.getUsers()).filter(uu => uu.role === 'pending').length;
