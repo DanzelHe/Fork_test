@@ -595,6 +595,31 @@
   <span>坐标: <b id="coords">0, 0</b></span>
 </div>
 
+<!-- ===== 管理面板（放在 script 前，確保元素在腳本執行時已存在）===== -->
+<div class="modal-mask" id="adminPanel" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⚙ 管理面板</h2>
+      <div class="header-tools">
+        <span id="srcLabel" class="src-label">資料來源：—</span>
+        <span id="dirtyBadge" class="dirty-badge" hidden>⚠ 有未儲存變更</span>
+        <button class="btn" id="importJsonBtn" type="button" title="從本機文件載入 users.json，可合併待審使用者申請">📥 匯入</button>
+        <button class="btn" id="reloadBtn" type="button" title="從 users.json 重新載入（會覆蓋本機快取）">↻ 重新載入</button>
+        <button class="btn primary" id="saveJsonBtn" type="button" title="下載 users.json（儲存目前的變更）">💾 儲存 users.json</button>
+        <button class="btn" id="adminCloseBtn" type="button">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="gate-tabs" id="adminTabs">
+        <button class="gate-tab active" data-tab="pending" type="button">待審 <span id="cntPending">0</span></button>
+        <button class="gate-tab" data-tab="approved" type="button">已批准 <span id="cntApproved">0</span></button>
+        <button class="gate-tab" data-tab="rejected" type="button">已拒絕 <span id="cntRejected">0</span></button>
+      </div>
+      <div id="adminList" style="margin-top:16px"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ===== 權限系統（管理員核准制）=====
 const DB = {
@@ -799,7 +824,6 @@ function importUsersJson() {
   document.body.appendChild(input);
   input.click();
   setTimeout(() => input.remove(), 2000);
-}
 }
 
 const usersBootPromise = (async () => {
@@ -1090,7 +1114,7 @@ document.getElementById('reloadBtn').addEventListener('click', reloadFromFile);
 document.getElementById('importJsonBtn').addEventListener('click', importUsersJson);
 document.getElementById('exportForAdminBtn').addEventListener('click', exportUsersJson);
 
-// 管理面板
+// 管理面板頁籤
 let currentAdminTab = 'pending';
 document.querySelectorAll('#adminTabs .gate-tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -1908,30 +1932,5 @@ usersBootPromise.then(() => { updateDebugInfo(); });
   updateStatus();
 })();
 </script>
-
-<!-- ===== 管理面板 ===== -->
-<div class="modal-mask" id="adminPanel" hidden>
-  <div class="modal">
-    <div class="modal-header">
-      <h2>⚙ 管理面板</h2>
-      <div class="header-tools">
-        <span id="srcLabel" class="src-label">資料來源：—</span>
-        <span id="dirtyBadge" class="dirty-badge" hidden>⚠ 有未儲存變更</span>
-        <button class="btn" id="importJsonBtn" type="button" title="從本機文件載入 users.json，可合併待審使用者申請">📥 匯入</button>
-        <button class="btn" id="reloadBtn" type="button" title="從 users.json 重新載入（會覆蓋本機快取）">↻ 重新載入</button>
-        <button class="btn primary" id="saveJsonBtn" type="button" title="下載 users.json（儲存目前的變更）">💾 儲存 users.json</button>
-        <button class="btn" id="adminCloseBtn" type="button">✕</button>
-      </div>
-    </div>
-    <div class="modal-body">
-      <div class="gate-tabs" id="adminTabs">
-        <button class="gate-tab active" data-tab="pending" type="button">待審 <span id="cntPending">0</span></button>
-        <button class="gate-tab" data-tab="approved" type="button">已批准 <span id="cntApproved">0</span></button>
-        <button class="gate-tab" data-tab="rejected" type="button">已拒絕 <span id="cntRejected">0</span></button>
-      </div>
-      <div id="adminList" style="margin-top:16px"></div>
-    </div>
-  </div>
-</div>
 </body>
 </html>
